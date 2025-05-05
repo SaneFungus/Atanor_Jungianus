@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atanor Jungianus - Generator Promptów</title>
+    <style>
+      :root {
+        --color-dark: #0f1321;
+        --color-light: #e2e2e2;
+        --color-primary: #d4af37;
+        --color-secondary: #9a7d0a;
+        --color-bg: #162447;
+        --color-bg-secondary: #1f3a5f;
+        --color-nigredo: #111;
+        --color-albedo: #ededed;
+        --color-citrinitas: #ccd60f;
+        --color-rubedo: #952323;
+        --font-primary: "Georgia", serif;
+        --font-secondary: "Times New Roman", serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: var(--font-primary);
+        background-color: var(--color-dark);
+        color: var(--color-light);
+        line-height: 1.6;
+        position: relative;
+      }
+
+      body::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+            circle at center,
+            transparent 0%,
+            transparent 70%,
+            rgba(42, 63, 95, 0.05) 70%,
+            rgba(42, 63, 95, 0.05) 100%
+          ),
+          radial-gradient(
+            circle at center,
+            transparent 0%,
+            transparent 65%,
+            rgba(42, 63, 95, 0.08) 65%,
+            rgba(42, 63, 95, 0.08) 100%
+          );
+        background-size: 30px 30px;
+        background-position: 0 0, 15px 15px;
+        z-index: -1;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-secondary);
+        color: var(--color-primary);
+        text-align: center;
+        margin-bottom: 15px;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        letter-spacing: 2px;
+        margin-top: 20px;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+        letter-spacing: 1px;
+      }
+
+      h3 {
+        font-size: 1.3rem;
+        letter-spacing: 1px;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: var(--color-secondary);
+        font-style: italic;
+        margin-bottom: 30px;
+      }
+
+      section {
+        background-color: rgba(22, 36, 71, 0.8);
+        border: 1px solid var(--color-primary);
+        border-radius: 5px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .phase-option h3 {
+        text-shadow: -0.2px -0.2px 0 #000, 0.2px -0.2px 0 #000,
+          -0.5px 0.5px 0 #000, 1px 1px 0 #000;
+      }
+      /* Przełącznik trybów */
+      .mode-toggle-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .toggle-label {
+        margin: 0 10px;
+        color: var(--color-light);
+      }
+
+      .toggle {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+      }
+
+      .toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #333;
+        transition: 0.4s;
+        border-radius: 34px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: var(--color-light);
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider {
+        background-color: var(--color-secondary);
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(26px);
+      }
+
+      /* Selektory faz */
+      .phase-selector {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .phase-option {
+        flex: 1;
+        text-align: center;
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #333;
+        transition: all 0.3s ease;
+      }
+
+      .phase-option:hover {
+        border-color: var(--color-primary);
+      }
+
+      .phase-option.nigredo {
+        background-color: var(--color-nigredo);
+        color: var(--color-light);
+      }
+
+      .phase-option.albedo {
+        background-color: var(--color-albedo);
+        color: var(--color-dark);
+      }
+
+      .phase-option.citrinitas {
+        background-color: var(--color-citrinitas);
+        color: var(--color-dark);
+      }
+
+      .phase-option.rubedo {
+        background-color: var(--color-rubedo);
+        color: var(--color-light);
+      }
+
+      .phase-option.selected {
+        border: 2px solid var(--color-primary);
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+      }
+
+      /* Formularze */
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--color-primary);
+      }
+
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        background-color: #1e2b45;
+        border: 1px solid #5b5b5b;
+        border-radius: 3px;
+        color: var(--color-light);
+        font-family: var(--font-primary);
+      }
+
+      textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        height: 6px;
+        background-color: #333;
+        border-radius: 3px;
+        outline: none;
+        -webkit-appearance: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--color-primary);
+        cursor: pointer;
+      }
+
+      .range-value {
+        text-align: right;
+        font-size: 0.9rem;
+        color: #8a8a8a;
+      }
+
+      /* Tryby */
+      .mode-section {
+        transition: opacity 0.3s ease, height 0.3s ease;
+        height: auto;
+        opacity: 1;
+      }
+
+      .hidden {
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Przyciski akcji */
+      .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      button {
+        padding: 10px 25px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      #generate-button {
+        background-color: var(--color-secondary);
+        color: var(--color-dark);
+        border: 1px solid var(--color-primary);
+        font-weight: bold;
+      }
+
+      #copy-button {
+        background-color: #242f40;
+        color: var(--color-primary);
+        border: 1px solid #5b5b5b;
+      }
+
+      #generate-button:hover {
+        background-color: var(--color-primary);
+      }
+
+      #copy-button:hover {
+        background-color: #2d3a4d;
+      }
+
+      /* Wyjście promptu */
+      .output-container {
+        margin-top: 20px;
+      }
+
+      #prompt-output {
+        background-color: #0f0f1a;
+        border: 1px solid #5b5b5b;
+        border-radius: 3px;
+        padding: 15px;
+        white-space: pre-wrap;
+        font-family: monospace;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      /* Responsywność */
+      @media (max-width: 768px) {
+        .phase-selector {
+          flex-direction: column;
+        }
+
+        .action-buttons {
+          flex-direction: column;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>ATANOR JUNGIANUS</h1>
+        <p class="subtitle">Generator Promptów Alchemicznych</p>
+      </header>
+
+      <section class="mode-section">
+        <div class="mode-toggle-container">
+          <span class="toggle-label">Tryb Podstawowy</span>
+          <label class="toggle">
+            <input type="checkbox" id="mode-toggle" />
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label">Tryb Zaawansowany</span>
+        </div>
+      </section>
+
+      <section class="parameters-section">
+        <h2>PARAMETRY TRANSMUTACJI</h2>
+
+        <div class="form-group">
+          <label for="phase-selector">Faza Alchemiczna:</label>
+          <div class="phase-selector">
+            <div class="phase-option nigredo selected" data-value="nigredo">
+              <h3>NIGREDO</h3>
+              <p>Dekonstrukcja</p>
+            </div>
+            <div class="phase-option albedo" data-value="albedo">
+              <h3>ALBEDO</h3>
+              <p>Oczyszczenie</p>
+            </div>
+            <div class="phase-option citrinitas" data-value="citrinitas">
+              <h3>CITRINITAS</h3>
+              <p>Iluminacja</p>
+            </div>
+            <div class="phase-option rubedo" data-value="rubedo">
+              <h3>RUBEDO</h3>
+              <p>Manifestacja</p>
+            </div>
+          </div>
+          <input type="hidden" id="phase-selector" value="nigredo" />
+        </div>
+
+        <div id="advanced-mode" class="mode-section hidden">
+          <div class="form-group">
+            <label for="archetype-selector">Archetyp Dominujący:</label>
+            <select id="archetype-selector">
+              <option value="shadow">CIEŃ (nieświadome aspekty)</option>
+              <option value="anima">ANIMA/ANIMUS (polaryzacja energii)</option>
+              <option value="self">JAŹŃ (całościowość)</option>
+              <option value="persona">PERSONA (maska społeczna)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="tension-slider"
+              >Napięcie Przeciwieństw:
+              <span id="tension-value">5</span>/10</label
+            >
+            <input
+              type="range"
+              id="tension-slider"
+              min="1"
+              max="10"
+              value="5"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="element-selector">Element Dominujący:</label>
+            <select id="element-selector">
+              <option value="fire">OGIEŃ (intuicja, transformacja)</option>
+              <option value="water">WODA (emocje, nieświadomość)</option>
+              <option value="air">POWIETRZE (myśl, komunikacja)</option>
+              <option value="earth">ZIEMIA (materia, doświadczenie)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="epistemic-selector">Tryb Epistemiczny:</label>
+            <select id="epistemic-selector">
+              <option value="rational">RACJONALNY (logika, analiza)</option>
+              <option value="imaginal">IMAGINALNY (obrazy, wyobrażenia)</option>
+              <option value="symbolic">SYMBOLICZNY (archetypy, symbole)</option>
+              <option value="practical">
+                PRAKTYCZNY (zastosowanie, działanie)
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div id="basic-mode" class="mode-section">
+          <!-- Pusty dla przejrzystości interfejsu -->
+        </div>
+
+        <div class="form-group">
+          <label for="question-input"
+            >Zagadnienie do Transmutacji (Materia Prima):</label
+          >
+          <textarea
+            id="question-input"
+            placeholder="Wprowadź zagadnienie wymagające alchemicznej transformacji..."
+          ></textarea>
+        </div>
+
+        <div class="action-buttons">
+          <button id="generate-button">Generuj Prompt</button>
+        </div>
+      </section>
+
+      <section class="output-container">
+        <h2>WYGENEROWANY PROMPT</h2>
+        <div id="prompt-output"></div>
+        <div class="action-buttons">
+          <button id="copy-button">Kopiuj do schowka</button>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      /**
+       * Atanor Jungianus - Generator Promptów
+       * Moduł tworzący prompty dla LLM na podstawie jungowskiego podejścia alchemicznego
+       */
+
+      class AtanorJungianusGenerator {
+        constructor() {
+          // Inicjalizacja podstawowych struktur
+          this.initializeTemplates()
+        }
+
+        // Zainicjuj wszystkie szablony promptów
+        initializeTemplates() {
+          // Instrukcje bazowe
+          this.baseInstructions = {
+            standard:
+              "Działaj jako Atanor Jungianus - epistemiczny alchemik operujący w tradycji C.G. Junga. Twoje zadanie polega na przeprowadzeniu alchemicznej transmutacji przedstawionego zagadnienia zgodnie z podanymi parametrami.",
+            advanced:
+              "Działaj jako Atanor Jungianus - epistemiczny alchemik głębokiej tradycji jungowskiej. Przeprowadź wielowymiarową transmutację zagadnienia z uwzględnieniem złożonych wymiarów archetypowych, elementalnych i epistemicznych.",
+          }
+
+          // Instrukcje zamykające
+          this.closingInstructions = {
+            standard:
+              "Strukturyzuj swoją odpowiedź zgodnie z alchemicznym procesem [FAZA], utrzymując równowagę między rygorystyczną analizą a symbolicznym rozumieniem. Unikaj jednoznacznych rozstrzygnięć na rzecz produktywnego utrzymywania napięcia między przeciwstawnymi perspektywami.\n\nNa zakończenie zaproponuj możliwości dalszej transmutacji, które mogłyby pogłębić rozumienie zagadnienia.",
+            advanced:
+              "Strukturyzuj swoją odpowiedź zgodnie z procesem [FAZA], integrując wymiar [ARCHETYP] i stosując epistemiczny tryb [TRYB]. Utrzymuj napięcie przeciwieństw na poziomie [NAPIĘCIE]/10, pozwalając by element [ELEMENT] przenikał całą analizę.\n\nNa zakończenie zaproponuj dalsze możliwości transformacji zagadnienia przez inne fazy alchemiczne, archetypy lub poziomy napięcia.",
+          }
+
+          // Procesy fazowe - dla każdej fazy alchemicznej
+          this.phaseProcesses = {
+            nigredo: {
+              name: "NIGREDO",
+              description:
+                "Przeprowadź zagadnienie przez proces alchemicznej dekonstrukcji, zgodnie z następującymi etapami:",
+              stages: [
+                {
+                  name: "CALCINATIO",
+                  steps: [
+                    "Wypal powierzchowne rozumienie problemu",
+                    "Zidentyfikuj ukryte założenia i nieświadome projekcje",
+                    "Wskaż na potencjalne punkty ślepe w konwencjonalnym ujęciu",
+                  ],
+                },
+                {
+                  name: "SOLUTIO",
+                  steps: [
+                    "Rozpuść sztywne kategorie pojęciowe",
+                    "Eksploruj płynne granice między pozornie odrębnymi elementami",
+                    "Zanurz zagadnienie w szerszym kontekście",
+                  ],
+                },
+                {
+                  name: "MORTIFICATIO",
+                  steps: [
+                    "Rozpoznaj, które aspekty rozumienia muszą obumrzeć",
+                    "Zidentyfikuj ograniczenia obecnych ram konceptualnych",
+                    "Przygotuj grunt pod nowe struktury rozumienia",
+                  ],
+                },
+              ],
+            },
+            albedo: {
+              name: "ALBEDO",
+              description:
+                "Przeprowadź zagadnienie przez proces alchemicznego oczyszczenia, zgodnie z następującymi etapami:",
+              stages: [
+                {
+                  name: "PURIFICATIO",
+                  steps: [
+                    "Oddziel istotne od nieistotnego w zagadnieniu",
+                    "Oczyść problem z dualistycznych uproszczeń",
+                    "Destyluj fundamentalne struktury problemowe",
+                  ],
+                },
+                {
+                  name: "SUBLIMATIO",
+                  steps: [
+                    "Podnieś zagadnienie na wyższy poziom abstrakcji",
+                    "Przekształć konkret w uniwersalną zasadę",
+                    "Oddziel esencję problemu od jego przejawów",
+                  ],
+                },
+                {
+                  name: "CRYSTALLIZATIO",
+                  steps: [
+                    "Wyodrębnij klarowne wzorce i struktury",
+                    "Uwidocznij fundamentalne relacje",
+                    "Skrystalizuj esencjalne pytania leżące u podstaw zagadnienia",
+                  ],
+                },
+              ],
+            },
+            citrinitas: {
+              name: "CITRINITAS",
+              description:
+                "Przeprowadź zagadnienie przez proces alchemicznej iluminacji, zgodnie z następującymi etapami:",
+              stages: [
+                {
+                  name: "ILLUMINATIO",
+                  steps: [
+                    "Rzuć nowe światło na zagadnienie",
+                    "Dostrzeż niewidoczne dotąd połączenia",
+                    "Oświetl paradoksy i sprzeczności jako źródła głębszego zrozumienia",
+                  ],
+                },
+                {
+                  name: "MULTIPLICATIO",
+                  steps: [
+                    "Rozpoznaj wielość perspektyw i ich współzależność",
+                    "Zidentyfikuj jak zagadnienie manifestuje się na różnych poziomach",
+                    "Dostrzeż wzorce fraktalne w problemie",
+                  ],
+                },
+                {
+                  name: "CONIUNCTIO",
+                  steps: [
+                    "Integruj przeciwieństwa w wyższą syntezę",
+                    "Poszukuj trzeciej drogi poza dualizmem",
+                    "Łącz perspektywy w złożony, wielowymiarowy obraz",
+                  ],
+                },
+              ],
+            },
+            rubedo: {
+              name: "RUBEDO",
+              description:
+                "Przeprowadź zagadnienie przez proces alchemicznej manifestacji, zgodnie z następującymi etapami:",
+              stages: [
+                {
+                  name: "COAGULATIO",
+                  steps: [
+                    "Przekształć abstrakcyjne wglądy w konkretne ujęcia",
+                    "Rozpoznaj praktyczne implikacje zagadnienia",
+                    "Zidentyfikuj możliwe manifestacje w doświadczeniu",
+                  ],
+                },
+                {
+                  name: "FIXATIO",
+                  steps: [
+                    "Utrwal transformatywne wglądy w spójną strukturę",
+                    "Stwórz stabilne ramy dla nowego rozumienia",
+                    "Zakotwicz abstrakcyjne koncepcje w doświadczalnej rzeczywistości",
+                  ],
+                },
+                {
+                  name: "PROJECTIO",
+                  steps: [
+                    "Wskaż potencjalne zastosowania transformowanego rozumienia",
+                    "Rozpoznaj, jak zmodyfikowane pojmowanie wpływa na inne obszary",
+                    "Zidentyfikuj nowe pytania wyłaniające się z transformacji",
+                  ],
+                },
+              ],
+            },
+          }
+
+          // Modyfikatory archetypowe
+          this.archetypeModifiers = {
+            shadow: {
+              name: "CIEŃ",
+              modifiers: [
+                "Skieruj szczególną uwagę na wyparte, nierozpoznane lub zaprzeczone aspekty zagadnienia",
+                "Poszukuj tego, co stanowi nieświadomy rewers dominującego rozumienia",
+                "Zidentyfikuj potencjalne projekcje i ślepe punkty w analizie",
+              ],
+            },
+            anima: {
+              name: "ANIMA/ANIMUS",
+              modifiers: [
+                "Rozpoznaj polaryzację energii i napięcia w zagadnieniu",
+                "Poszukuj kontrastujących, dopełniających się elementów problemu",
+                "Eksploruj potencjał integracji przeciwstawnych sił",
+              ],
+            },
+            self: {
+              name: "JAŹŃ",
+              modifiers: [
+                "Dąż do holistycznego, całościowego ujęcia zagadnienia",
+                "Rozpoznaj wzorzec jednoczący pozorne przeciwieństwa",
+                "Poszukuj transcendentnej perspektywy integrującej różne aspekty problemu",
+              ],
+            },
+            persona: {
+              name: "PERSONA",
+              modifiers: [
+                "Zbadaj społeczne i kulturowe uwarunkowania zagadnienia",
+                "Rozpoznaj napięcie między zewnętrzną manifestacją a wewnętrzną rzeczywistością",
+                "Zidentyfikuj konwencjonalne maski i fasady problemu",
+              ],
+            },
+          }
+
+          // Modyfikatory elementów
+          this.elementModifiers = {
+            fire: {
+              name: "OGIEŃ",
+              modifiers: [
+                "Wprowadź energię transformacyjną do analizy",
+                "Skup się na aspektach intuicyjnych i inspiracyjnych",
+                "Eksploruj dynamiczne i ekspansywne wymiary zagadnienia",
+              ],
+            },
+            water: {
+              name: "WODA",
+              modifiers: [
+                "Pozwól na płynność granic pojęciowych",
+                "Eksploruj emocjonalne i nieświadome aspekty zagadnienia",
+                "Uwzględnij zmienność i transformacyjny potencjał problemu",
+              ],
+            },
+            air: {
+              name: "POWIETRZE",
+              modifiers: [
+                "Podejdź do zagadnienia z intelektualną lekkością",
+                "Eksploruj wymiary komunikacyjne i pojęciowe",
+                "Rozpoznaj wzorce myślowe i struktury mentalne problemu",
+              ],
+            },
+            earth: {
+              name: "ZIEMIA",
+              modifiers: [
+                "Utrzymuj ugruntowanie w konkretnym doświadczeniu",
+                "Poszukuj praktycznych i namacalnych aspektów zagadnienia",
+                "Zakotwicz abstrakcyjne koncepcje w materialnej rzeczywistości",
+              ],
+            },
+          }
+
+          // Modyfikatory trybów epistemicznych
+          this.epistemicModes = {
+            rational: {
+              name: "RACJONALNY",
+              modifiers: [
+                "Stosuj logiczną, systematyczną analizę",
+                "Dąż do konceptualnej precyzji i klarowności",
+                "Weryfikuj spójność i koherencję rozumowania",
+              ],
+            },
+            imaginal: {
+              name: "IMAGINALNY",
+              modifiers: [
+                "Pozwól, by analiza była prowadzona przez obrazy i symbole",
+                "Eksploruj zagadnienie przez aktywną imaginację",
+                "Uwzględnij wymiar symboliczny i metaforyczny problemu",
+              ],
+            },
+            symbolic: {
+              name: "SYMBOLICZNY",
+              modifiers: [
+                "Traktuj elementy zagadnienia jako symbole głębszych procesów",
+                "Rozpoznaj archetypowe wzorce manifestujące się w problemie",
+                "Poszukuj symbolicznych korespondencji w różnych domenach",
+              ],
+            },
+            practical: {
+              name: "PRAKTYCZNY",
+              modifiers: [
+                "Ukierunkuj analizę na praktyczne zastosowania",
+                "Poszukuj realnych implikacji i konsekwencji",
+                "Weryfikuj rozumienie przez pryzmat stosowalności",
+              ],
+            },
+          }
+        }
+
+        // Generuj prompt w trybie podstawowym
+        generateBasicPrompt(phase, question) {
+          if (!this.phaseProcesses[phase]) {
+            return "Błąd: Nieprawidłowa faza alchemiczna"
+          }
+
+          const selectedPhase = this.phaseProcesses[phase]
+          let prompt = this.baseInstructions.standard + "\n\n"
+
+          // Dodaj parametry transformacji
+          prompt += `FAZA ALCHEMICZNA: ${selectedPhase.name}\n`
+          prompt += `ZAGADNIENIE: "${question}"\n\n`
+
+          // Dodaj opis procesu
+          prompt += selectedPhase.description + "\n\n"
+
+          // Dodaj etapy procesu
+          selectedPhase.stages.forEach((stage, idx) => {
+            prompt += `${idx + 1}. ${stage.name}\n`
+            stage.steps.forEach((step) => {
+              prompt += `   * ${step}\n`
+            })
+            prompt += "\n"
+          })
+
+          // Dodaj instrukcję zamykającą
+          prompt += this.closingInstructions.standard.replace(
+            "[FAZA]",
+            selectedPhase.name
+          )
+
+          return prompt
+        }
+
+        // Generuj prompt w trybie zaawansowanym
+        generateAdvancedPrompt(
+          phase,
+          archetype,
+          tensionLevel,
+          element,
+          epistemicMode,
+          question
+        ) {
+          if (
+            !this.phaseProcesses[phase] ||
+            !this.archetypeModifiers[archetype] ||
+            !this.elementModifiers[element] ||
+            !this.epistemicModes[epistemicMode]
+          ) {
+            return "Błąd: Nieprawidłowe parametry"
+          }
+
+          const selectedPhase = this.phaseProcesses[phase]
+          const selectedArchetype = this.archetypeModifiers[archetype]
+          const selectedElement = this.elementModifiers[element]
+          const selectedMode = this.epistemicModes[epistemicMode]
+
+          let prompt = this.baseInstructions.advanced + "\n\n"
+
+          // Dodaj parametry transformacji
+          prompt += `FAZA ALCHEMICZNA: ${selectedPhase.name}\n`
+          prompt += `ARCHETYP: ${selectedArchetype.name}\n`
+          prompt += `NAPIĘCIE PRZECIWIEŃSTW: ${tensionLevel}/10\n`
+          prompt += `ELEMENT DOMINUJĄCY: ${selectedElement.name}\n`
+          prompt += `TRYB EPISTEMICZNY: ${selectedMode.name}\n`
+          prompt += `ZAGADNIENIE: "${question}"\n\n`
+
+          // Dodaj opis procesu
+          prompt += selectedPhase.description + "\n\n"
+
+          // Dodaj etapy procesu
+          selectedPhase.stages.forEach((stage, idx) => {
+            prompt += `${idx + 1}. ${stage.name}\n`
+            stage.steps.forEach((step) => {
+              prompt += `   * ${step}\n`
+            })
+            prompt += "\n"
+          })
+
+          // Dodaj modyfikatory archetypowe
+          prompt += "MODYFIKACJE ARCHETYPOWE:\n"
+          selectedArchetype.modifiers.forEach((modifier) => {
+            prompt += `* ${modifier}\n`
+          })
+          prompt += "\n"
+
+          // Dodaj modyfikatory elementu
+          prompt += "MODYFIKACJE ELEMENTALNE:\n"
+          selectedElement.modifiers.forEach((modifier) => {
+            prompt += `* ${modifier}\n`
+          })
+          prompt += "\n"
+
+          // Dodaj modyfikatory trybu epistemicznego
+          prompt += "MODYFIKACJE EPISTEMICZNE:\n"
+          selectedMode.modifiers.forEach((modifier) => {
+            prompt += `* ${modifier}\n`
+          })
+          prompt += "\n"
+
+          // Dodaj instrukcję zamykającą
+          let closingText = this.closingInstructions.advanced
+            .replace("[FAZA]", selectedPhase.name)
+            .replace("[ARCHETYP]", selectedArchetype.name)
+            .replace("[TRYB]", selectedMode.name)
+            .replace("[NAPIĘCIE]", tensionLevel)
+            .replace("[ELEMENT]", selectedElement.name)
+
+          prompt += closingText
+
+          return prompt
+        }
+      }
+
+      // Inicjalizacja interfejsu po załadowaniu dokumentu
+      document.addEventListener("DOMContentLoaded", function () {
+        const generator = new AtanorJungianusGenerator()
+
+        // Referencje do elementów UI
+        const modeToggle = document.getElementById("mode-toggle")
+        const basicMode = document.getElementById("basic-mode")
+        const advancedMode = document.getElementById("advanced-mode")
+        const phaseOptions = document.querySelectorAll(".phase-option")
+        const phaseInput = document.getElementById("phase-selector")
+        const archetypeSelector = document.getElementById("archetype-selector")
+        const tensionSlider = document.getElementById("tension-slider")
+        const tensionValue = document.getElementById("tension-value")
+        const elementSelector = document.getElementById("element-selector")
+        const epistemicSelector = document.getElementById("epistemic-selector")
+        const questionInput = document.getElementById("question-input")
+        const generateButton = document.getElementById("generate-button")
+        const promptOutput = document.getElementById("prompt-output")
+        const copyButton = document.getElementById("copy-button")
+
+        // Obsługa przełącznika trybów
+        modeToggle.addEventListener("change", function () {
+          if (this.checked) {
+            basicMode.classList.add("hidden")
+            advancedMode.classList.remove("hidden")
+          } else {
+            basicMode.classList.remove("hidden")
+            advancedMode.classList.add("hidden")
+          }
+        })
+
+        // Obsługa wyboru fazy
+        phaseOptions.forEach((option) => {
+          option.addEventListener("click", function () {
+            phaseOptions.forEach((opt) => opt.classList.remove("selected"))
+            this.classList.add("selected")
+            phaseInput.value = this.getAttribute("data-value")
+          })
+        })
+
+        // Aktualizacja wyświetlanej wartości suwaka
+        tensionSlider.addEventListener("input", function () {
+          tensionValue.textContent = this.value
+        })
+
+        // Generowanie promptu
+        generateButton.addEventListener("click", function () {
+          const question = questionInput.value
+
+          if (!question.trim()) {
+            alert("Proszę wprowadzić zagadnienie do transmutacji.")
+            return
+          }
+
+          let prompt
+          const phase = phaseInput.value
+
+          if (modeToggle.checked) {
+            // Tryb zaawansowany
+            const archetype = archetypeSelector.value
+            const tension = tensionSlider.value
+            const element = elementSelector.value
+            const epistemic = epistemicSelector.value
+
+            prompt = generator.generateAdvancedPrompt(
+              phase,
+              archetype,
+              tension,
+              element,
+              epistemic,
+              question
+            )
+          } else {
+            // Tryb podstawowy
+            prompt = generator.generateBasicPrompt(phase, question)
+          }
+
+          promptOutput.textContent = prompt
+        })
+
+        // Kopiowanie wygenerowanego promptu
+        copyButton.addEventListener("click", function () {
+          if (promptOutput.textContent.trim() === "") {
+            alert("Najpierw wygeneruj prompt.")
+            return
+          }
+
+          navigator.clipboard
+            .writeText(promptOutput.textContent)
+            .then(function () {
+              const originalText = copyButton.textContent
+              copyButton.textContent = "Skopiowano!"
+              setTimeout(() => {
+                copyButton.textContent = originalText
+              }, 2000)
+            })
+            .catch(function () {
+              alert("Nie udało się skopiować tekstu.")
+            })
+        })
+      })
+    </script>
+  </body>
+</html>
